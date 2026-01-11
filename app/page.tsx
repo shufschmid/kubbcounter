@@ -267,6 +267,26 @@ export default function Home() {
               >
                 Isabelle
               </button>
+              <button
+                onClick={() => setSetup({ ...setup, playerName: 'Louise' })}
+                className={`py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
+                  setup.playerName === 'Louise'
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Louise
+              </button>
+              <button
+                onClick={() => setSetup({ ...setup, playerName: 'Sophie' })}
+                className={`py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
+                  setup.playerName === 'Sophie'
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Sophie
+              </button>
             </div>
           </div>
 
