@@ -48,6 +48,8 @@ export default function Home() {
     totalHits: false,
   });
   const [celebrationGif, setCelebrationGif] = useState<string>('');
+  const [historicalRecords, setHistoricalRecords] = useState<any>(null);
+  const [clickedButton, setClickedButton] = useState<'hit' | 'miss' | null>(null);
 
   // Array of celebration GIFs
   const celebrationGifs = [
@@ -82,7 +84,7 @@ export default function Home() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startGame = () => {
+  const startGame = async () => {
     setSession({
       setup,
       throws: [],
@@ -90,6 +92,20 @@ export default function Home() {
     });
     setElapsedTime(0);
     setScreen('game');
+
+    // Fetch historical records at game start
+    try {
+      const response = await fetch(
+        `/.netlify/functions/get-records?playerName=${encodeURIComponent(setup.playerName)}&distance=${encodeURIComponent(setup.distance)}&quantity=${setup.quantity}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setHistoricalRecords(data.records);
+      }
+    } catch (error) {
+      console.error('Error fetching historical records:', error);
+    }
   };
 
   const calculateStatistics = (): Statistics => {
@@ -122,55 +138,47 @@ export default function Home() {
     return { hits, misses, hitPercentage, longestHitStreak, longestMissStreak };
   };
 
-  const checkForRecords = async () => {
+  const checkForRecords = () => {
     if (!session) return;
 
     const stats = calculateStatistics();
 
-    try {
-      const response = await fetch(
-        `/.netlify/functions/get-records?playerName=${encodeURIComponent(setup.playerName)}&distance=${encodeURIComponent(setup.distance)}&quantity=${setup.quantity}`
-      );
+    // Use pre-fetched historical records
+    if (historicalRecords) {
+      const breaks: RecordBreaks = {
+        hitStreak: stats.longestHitStreak > historicalRecords.maxHitStreak,
+        hitPercentage: stats.hitPercentage > historicalRecords.maxHitPercentage,
+        totalHits: stats.hits > historicalRecords.maxHitsForQuantity,
+      };
 
-      if (response.ok) {
-        const data = await response.json();
-        const { records } = data;
+      setRecordBreaks(breaks);
 
-        const breaks: RecordBreaks = {
-          hitStreak: stats.longestHitStreak > records.maxHitStreak,
-          hitPercentage: stats.hitPercentage > records.maxHitPercentage,
-          totalHits: stats.hits > records.maxHitsForQuantity,
-        };
+      // Show celebration if any records were broken
+      if (breaks.hitStreak || breaks.hitPercentage || breaks.totalHits) {
+        // Select a random celebration GIF
+        const randomGif = celebrationGifs[Math.floor(Math.random() * celebrationGifs.length)];
+        setCelebrationGif(randomGif);
 
-        setRecordBreaks(breaks);
-
-        // Show celebration if any records were broken
-        if (breaks.hitStreak || breaks.hitPercentage || breaks.totalHits) {
-          // Select a random celebration GIF
-          const randomGif = celebrationGifs[Math.floor(Math.random() * celebrationGifs.length)];
-          setCelebrationGif(randomGif);
-
-          setScreen('celebration');
-          // Auto-advance to statistics after 5 seconds
-          setTimeout(() => {
-            setScreen('statistics');
-          }, 5000);
-        } else {
+        setScreen('celebration');
+        // Auto-advance to statistics after 5 seconds
+        setTimeout(() => {
           setScreen('statistics');
-        }
+        }, 5000);
       } else {
-        // If error fetching records, just go to statistics
         setScreen('statistics');
       }
-    } catch (error) {
-      console.error('Error checking records:', error);
-      // If error, just go to statistics
+    } else {
+      // If no historical records loaded, just go to statistics
       setScreen('statistics');
     }
   };
 
   const recordThrow = (result: ThrowResult) => {
     if (!session) return;
+
+    // Show button feedback
+    setClickedButton(result);
+    setTimeout(() => setClickedButton(null), 200);
 
     const newThrows = [...session.throws, result];
     setSession({
@@ -226,6 +234,7 @@ export default function Home() {
           setSubmitMessage('');
           setRecordBreaks({ hitStreak: false, hitPercentage: false, totalHits: false });
           setCelebrationGif('');
+          setHistoricalRecords(null);
         }, 2000);
       } else {
         setSubmitMessage(`Error: ${data.error || 'Failed to submit'}`);
@@ -366,14 +375,22 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-8">
           <button
             onClick={() => recordThrow('hit')}
-            className="w-64 h-64 bg-green-500 hover:bg-green-600 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-150 active:scale-95"
+            className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-100 ${
+              clickedButton === 'hit'
+                ? 'bg-green-700 scale-90 ring-8 ring-green-300'
+                : 'bg-green-500 hover:bg-green-600 active:scale-95'
+            }`}
           >
             HIT
           </button>
 
           <button
             onClick={() => recordThrow('miss')}
-            className="w-64 h-64 bg-red-500 hover:bg-red-600 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-150 active:scale-95"
+            className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-100 ${
+              clickedButton === 'miss'
+                ? 'bg-red-700 scale-90 ring-8 ring-red-300'
+                : 'bg-red-500 hover:bg-red-600 active:scale-95'
+            }`}
           >
             MISS
           </button>
