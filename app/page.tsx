@@ -50,6 +50,7 @@ export default function Home() {
   const [celebrationGif, setCelebrationGif] = useState<string>('');
   const [historicalRecords, setHistoricalRecords] = useState<any>(null);
   const [clickedButton, setClickedButton] = useState<'hit' | 'miss' | null>(null);
+  const [showPlusOne, setShowPlusOne] = useState<'hit' | 'miss' | null>(null);
 
   // Array of celebration GIFs
   const celebrationGifs = [
@@ -178,7 +179,11 @@ export default function Home() {
 
     // Show button feedback
     setClickedButton(result);
-    setTimeout(() => setClickedButton(null), 200);
+    setTimeout(() => setClickedButton(null), 300);
+
+    // Show +1 animation
+    setShowPlusOne(result);
+    setTimeout(() => setShowPlusOne(null), 800);
 
     const newThrows = [...session.throws, result];
     setSession({
@@ -327,7 +332,17 @@ export default function Home() {
 
           <div className="mb-8">
             <label className="block text-xl font-semibold text-gray-700 mb-3">Quantity of Throws</label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
+              <button
+                onClick={() => setSetup({ ...setup, quantity: 30 })}
+                className={`py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
+                  setup.quantity === 30
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                30
+              </button>
               <button
                 onClick={() => setSetup({ ...setup, quantity: 50 })}
                 className={`py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
@@ -372,28 +387,46 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-8">
-          <button
-            onClick={() => recordThrow('hit')}
-            className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-100 ${
-              clickedButton === 'hit'
-                ? 'bg-green-700 scale-90 ring-8 ring-green-300'
-                : 'bg-green-500 hover:bg-green-600 active:scale-95'
-            }`}
-          >
-            HIT
-          </button>
+        <div className="flex flex-col sm:flex-row gap-8 relative">
+          <div className="relative">
+            <button
+              onClick={() => recordThrow('hit')}
+              className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-150 ${
+                clickedButton === 'hit'
+                  ? 'bg-green-700 scale-90 ring-8 ring-green-300 brightness-125'
+                  : 'bg-green-500 hover:bg-green-600 active:scale-95'
+              }`}
+            >
+              HIT
+            </button>
+            {showPlusOne === 'hit' && setup.playerName === 'Isabelle' && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+                <div className="bg-white rounded-full w-32 h-32 flex items-center justify-center shadow-2xl border-8 border-green-500 animate-ping">
+                  <span className="text-6xl font-black text-green-600">+1</span>
+                </div>
+              </div>
+            )}
+          </div>
 
-          <button
-            onClick={() => recordThrow('miss')}
-            className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-100 ${
-              clickedButton === 'miss'
-                ? 'bg-red-700 scale-90 ring-8 ring-red-300'
-                : 'bg-red-500 hover:bg-red-600 active:scale-95'
-            }`}
-          >
-            MISS
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => recordThrow('miss')}
+              className={`w-64 h-64 text-white font-bold text-4xl rounded-2xl shadow-2xl transform transition-all duration-150 ${
+                clickedButton === 'miss'
+                  ? 'bg-red-700 scale-90 ring-8 ring-red-300 brightness-125'
+                  : 'bg-red-500 hover:bg-red-600 active:scale-95'
+              }`}
+            >
+              MISS
+            </button>
+            {showPlusOne === 'miss' && setup.playerName === 'Isabelle' && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+                <div className="bg-white rounded-full w-32 h-32 flex items-center justify-center shadow-2xl border-8 border-red-500 animate-ping">
+                  <span className="text-6xl font-black text-red-600">+1</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
